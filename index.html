@@ -1,95 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>UWC VR Social Hub</title>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/controls/OrbitControls.js"></script>
-</head>
-<body style="margin:0; overflow:hidden;">
-  <canvas id="vrCanvas"></canvas>
-  
-  <script>
-    // ----- Basic Scene -----
-    const canvas = document.getElementById('vrCanvas');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({canvas});
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    
-    // ----- Light -----
-    const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-    light.position.set(0, 200, 0);
-    scene.add(light);
-    
-    // ----- Floor -----
-    const floorGeo = new THREE.PlaneGeometry(50, 50);
-    const floorMat = new THREE.MeshStandardMaterial({color: 0x228B22});
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    scene.add(floor);
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>UWC VR Social Hub</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  </head>
+  <body>
+    <a-scene vr-mode-ui="enabled: true" gamepad-controls="enabled: true">
+      <!-- Floor -->
+      <a-plane rotation="-90 0 0" width="30" height="30" color="#228B22"></a-plane>
 
-    // ----- Avatar -----
-    const avatarGeo = new THREE.CapsuleGeometry(0.5, 1.2, 4, 8);
-    const avatarMat = new THREE.MeshStandardMaterial({color: 0x2194ce});
-    const avatar = new THREE.Mesh(avatarGeo, avatarMat);
-    avatar.position.y = 1.1;
-    scene.add(avatar);
+      <!-- Lighting -->
+      <a-entity light="type: ambient; color: #fff"></a-entity>
+      <a-entity light="type: directional; intensity: 0.6" position="1 2 1"></a-entity>
 
-    camera.position.set(0, 2, 5);
+      <!-- Player camera -->
+      <a-entity id="player" camera look-controls wasd-controls position="0 1.6 5">
+        <a-entity cursor="fuse: false; rayOrigin: mouse" raycaster="objects: .interactive"></a-entity>
+      </a-entity>
 
-    // ----- Gamepad Controls -----
-    let gamepadIndex = null;
-    window.addEventListener("gamepadconnected", (e) => {
-      gamepadIndex = e.gamepad.index;
-      console.log("Gamepad connected:", e.gamepad.id);
-    });
+      <!-- Sample avatar cubes to represent other students -->
+      <a-box position="2 0.5 -3" color="#2194ce" depth="1" height="1" width="1"></a-box>
+      <a-box position="-2 0.5 -2" color="#f4a261" depth="1" height="1" width="1"></a-box>
 
-    const moveSpeed = 0.1;
-    function handleGamepad() {
-      if(gamepadIndex === null) return;
-      const gp = navigator.getGamepads()[gamepadIndex];
-      if(!gp) return;
+      <!-- Mini-game: bouncing ball -->
+      <a-sphere id="ball" position="0 0.3 -2" radius="0.3" color="#ff0000"></a-sphere>
 
-      // Left stick movement
-      avatar.position.x += gp.axes[0] * moveSpeed; // left/right
-      avatar.position.z += gp.axes[1] * moveSpeed; // forward/back
+      <!-- Sky -->
+      <a-sky color="#87ceeb"></a-sky>
+    </a-scene>
 
-      // Right stick camera rotation
-      camera.rotation.y -= gp.axes[2] * 0.05; // yaw
-      camera.rotation.x -= gp.axes[3] * 0.05; // pitch
-      camera.position.set(avatar.position.x, avatar.position.y + 1, avatar.position.z + 5);
-    }
-
-    // ----- Mini-game example: bouncing ball -----
-    const ballGeo = new THREE.SphereGeometry(0.3, 16, 16);
-    const ballMat = new THREE.MeshStandardMaterial({color: 0xff0000});
-    const ball = new THREE.Mesh(ballGeo, ballMat);
-    ball.position.set(2, 0.3, 0);
-    scene.add(ball);
-
-    // Simple bounce
-    let ballDir = 0.05;
-
-    // ----- Animation Loop -----
-    function animate() {
-      requestAnimationFrame(animate);
-      handleGamepad();
-
-      // Bounce ball
-      ball.position.y += ballDir;
-      if(ball.position.y > 2 || ball.position.y < 0.3) ballDir *= -1;
-
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    // ----- Window Resize -----
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-  </script>
-</body>
+    <script>
+      // Bouncing ball animation
+      const ball = document.querySelector('#ball');
+      let dir = 0.03;
+      function animate() {
+        ball.object3D.position.y += dir;
+        if (ball.object3D.position.y > 2 || ball.object3D.position.y < 0.3) dir *= -1;
+        requestAnimationFrame(animate);
+      }
+      animate();
+    </script>
+  </body>
 </html>
