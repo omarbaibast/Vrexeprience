@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UWC VR Social Hub</title>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/controls/OrbitControls.js"></script>
+</head>
+<body style="margin:0; overflow:hidden;">
+  <canvas id="vrCanvas"></canvas>
+  
+  <script>
+    // ----- Basic Scene -----
+    const canvas = document.getElementById('vrCanvas');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({canvas});
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    
+    // ----- Light -----
+    const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+    light.position.set(0, 200, 0);
+    scene.add(light);
+    
+    // ----- Floor -----
+    const floorGeo = new THREE.PlaneGeometry(50, 50);
+    const floorMat = new THREE.MeshStandardMaterial({color: 0x228B22});
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+
+    // ----- Avatar -----
+    const avatarGeo = new THREE.CapsuleGeometry(0.5, 1.2, 4, 8);
+    const avatarMat = new THREE.MeshStandardMaterial({color: 0x2194ce});
+    const avatar = new THREE.Mesh(avatarGeo, avatarMat);
+    avatar.position.y = 1.1;
+    scene.add(avatar);
+
+    camera.position.set(0, 2, 5);
+
+    // ----- Gamepad Controls -----
+    let gamepadIndex = null;
+    window.addEventListener("gamepadconnected", (e) => {
+      gamepadIndex = e.gamepad.index;
+      console.log("Gamepad connected:", e.gamepad.id);
+    });
+
+    const moveSpeed = 0.1;
+    function handleGamepad() {
+      if(gamepadIndex === null) return;
+      const gp = navigator.getGamepads()[gamepadIndex];
+      if(!gp) return;
+
+      // Left stick movement
+      avatar.position.x += gp.axes[0] * moveSpeed; // left/right
+      avatar.position.z += gp.axes[1] * moveSpeed; // forward/back
+
+      // Right stick camera rotation
+      camera.rotation.y -= gp.axes[2] * 0.05; // yaw
+      camera.rotation.x -= gp.axes[3] * 0.05; // pitch
+      camera.position.set(avatar.position.x, avatar.position.y + 1, avatar.position.z + 5);
+    }
+
+    // ----- Mini-game example: bouncing ball -----
+    const ballGeo = new THREE.SphereGeometry(0.3, 16, 16);
+    const ballMat = new THREE.MeshStandardMaterial({color: 0xff0000});
+    const ball = new THREE.Mesh(ballGeo, ballMat);
+    ball.position.set(2, 0.3, 0);
+    scene.add(ball);
+
+    // Simple bounce
+    let ballDir = 0.05;
+
+    // ----- Animation Loop -----
+    function animate() {
+      requestAnimationFrame(animate);
+      handleGamepad();
+
+      // Bounce ball
+      ball.position.y += ballDir;
+      if(ball.position.y > 2 || ball.position.y < 0.3) ballDir *= -1;
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // ----- Window Resize -----
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
